@@ -12,7 +12,11 @@ from HTMLParser import HTMLParseError
 from pprint import pprint
 import searcher
 
+# TODO: make error categories consistent
+# TODO: turn timed_process_errors into a wrapped function
+# TODO: improve printouts during processing (& allow them to be controllable)
 # TODO: add timeouts to limit how long this takes
+# TODO: add config file support
 # TODO: add title field to errors to prevent double-scraping?
 
 ERRORS_LIST_FILENAME = 'www-law-columbia-edu_20170619T193831Z_CrawlErrors.csv'

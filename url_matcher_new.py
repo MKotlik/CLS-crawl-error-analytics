@@ -12,6 +12,14 @@ from HTMLParser import HTMLParseError
 from pprint import pprint
 import searcher
 
+# TODO: make error categories consistent
+# TODO: add ignoring by keyword (and use it as underlying functionality of ignoredDwnld)
+# TODO: turn timed_process_errors into a wrapped function
+# TODO: improve printouts during processing (& allow them to be controllable)
+# TODO: add timeouts to limit how long this takes
+# TODO: add config file support
+# TODO: add title field to errors to prevent double-scraping?
+
 """
 CLS-crawl-error-analytis package contents
 - matcher_app.py, run from CLI to automate crawling, analysis, matching
@@ -83,6 +91,7 @@ def process_errors(errors_filename, start=0, end=None):
     return errors_list[start:end]
 
 
+# Checked :)
 def get_errors_list(errors_filename):
     errors_list = []
     with open(errors_filename, 'rb') as errors_csv:
@@ -95,22 +104,36 @@ def get_errors_list(errors_filename):
                                 'old404Redirect': False,
                                 'newServerCode': None,
                                 'searchStatus': 'check',
+                                'ignoredKeyword': None,
                                 'pageName': None,
                                 'fullName': None,
                                 'possibleUrls': []})
     return errors_list
 
 
-def ignore_downloads(errors_list, start=0, end=None):
-    for error in errors_list[start:end]:
+# Checked :)
+def ignore_downloads(errors_list):
+    for error in errors_list:
         has_null = error['url'].startswith('http://www.law.columbia.edu/null')
         if has_null or 'filemgr' in error['url']:
             error['searchStatus'] = 'ignoredDwnld'
     return errors_list
 
 
-def check_new_redirects(errors_list, start=0, end=None):
-    for error in errors_list[start:end]:
+# Checked :)
+def ignore_by_keywords(errors_list, keywords=[]):
+    for error in errors_list:
+        for keyword in keywords:
+            if keyword in error['url']:
+                error['searchStatus'] = 'ignoredKeyword
+                error['ignoredKeyword'] = keyword
+                break
+    return errors_list
+
+
+# Checked :)
+def check_new_redirects(errors_list):
+    for error in errors_list:
         if error['searchStatus'] == 'check':
             try:
                 resp = requests.get(error['url'])
@@ -137,9 +160,9 @@ def check_new_redirects(errors_list, start=0, end=None):
     return errors_list
 
 
-def parse_old_pages(errors_list, start=0, end=None):
+def parse_old_pages(errors_list):
     # NOTE: combined with title scraper, since Soup-ing twice is inefficient
-    for error in errors_list[start:end]:
+    for error in errors_list:
         if error['searchStatus'] == 'check':
             try:
                 resp = requests.get(error['url'])
@@ -240,16 +263,12 @@ def parse_old_pages(errors_list, start=0, end=None):
     return errors_list
 
 
-def get_possible_matches(errors_list, start=0, end=None):
-    if end is None:
-        end = len(errors_list)
+def get_possible_matches(errors_list):
     # Configure searcher module
     api_key = searcher.load_config()
     cse_id = "013164244572636035941:csl0bhjaaa4"
     base_url = searcher.get_base_url(api_key, cse_id)
-    print "start: " + str(start)
-    print "end: " + str(end)
-    for error in errors_list[start:end]:
+    for error in errors_list:
         # Only search for links with found names
         if error['searchStatus'] == 'foundName':
             # Try searching for exact match first

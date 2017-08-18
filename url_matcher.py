@@ -245,34 +245,6 @@ def parse_old_pages(errors_list, start=0, end=None):
     return errors_list
 
 
-def check_new_redirects(errors_list, start=0, end=None):
-    for error in errors_list[start:end]:
-        if error['searchStatus'] == 'check':
-            try:
-                resp = requests.get(error['url'])
-                error['newServerCode'] = resp.status_code
-                if resp.status_code == 200:
-                    # DEBUG PRINT STATEMENT FOR REDIRECTED PAGES
-                    print 'FOUND REDIRECTED PAGE: ' + error['url']
-                    error['searchStatus'] = 'alreadyRedirected'
-            except TooManyRedirects as e:
-                print "TOO MANY REDIRECTS ERROR for " + error['url']
-                log_error(error['url'])
-                error['searchStatus'] = 'newServerRedirectsError'
-            except (KeyboardInterrupt, SystemExit):
-                raise
-            except:
-                error['searchStatus'] = 'unknownNewRequestError'
-                log_error(error['url'])
-                print 'CAUGHT UNKNOWN ERROR WHILE QUERYING NEW SERVER'
-                for item in sys.exc_info():
-                    print item
-                print 'CONTINUING'
-        # Completion DEBUG
-        print 'Parsed new: ' + error['url'] + '; Status: ' + error['searchStatus']
-    return errors_list
-
-
 def ignore_downloads(errors_list, start=0, end=None):
     for error in errors_list[start:end]:
         has_null = error['url'].startswith('http://www.law.columbia.edu/null')
